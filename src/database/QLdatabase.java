@@ -5,10 +5,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class QLdatabase {
-	private static final String DB_ServerName = "DESKTOP-BSBAAI0";
+	private static final String DB_ServerName = "ADMIN-PC";
 	private static final String DB_login = "sa";
-	private static final String DB_password = "nhan123";
-	private static final String DB_DatabaseName = "ComputerStores";
+	private static final String DB_password = "root";
+	private static final String DB_DatabaseName = "Computer_Stores";
 	
 	public static Connection getConnection() {
 		try {
