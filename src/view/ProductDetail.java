@@ -2,6 +2,8 @@ package view;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import view.ViewPaymentQRDialog;
+import utils.QRCodeHelper;
 
 import java.awt.*;
 import java.text.NumberFormat;
@@ -11,6 +13,10 @@ import java.util.Locale;
 import java.util.Vector;
 
 public class ProductDetail extends JFrame {
+	private static final String BANK_BIN = "970436";
+    private static final String ACCOUNT_NO = "1234567890"; 
+    private static final String MERCHANT_NAME = "Cua hang ABC"; 
+    
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
     private JLabel lblImage, lblProductName, lblPrice, lblDescription;
@@ -142,25 +148,50 @@ public class ProductDetail extends JFrame {
     }
 
     private void buyNow() {
-        if (!productService.checkProductAvailability(productName, 1)) {
+    	if (!productService.checkProductAvailability(productName, 1)) {
+            JOptionPane.showMessageDialog(this, "Sản phẩm hiện đã hết hàng.", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        List<String> selectedProducts = new ArrayList<>();
-        selectedProducts.add(productName);
+        // 1. Tạo nội dung QR Code
+        String orderDescription = "TT mua " + productName; 
+         // tên sản phẩm
+        String qrData = QRCodeHelper.createVietQRString(BANK_BIN, ACCOUNT_NO, price, orderDescription);
 
-        DefaultTableModel tempModel = new DefaultTableModel(new String[]{"Chọn", "Tên sản phẩm", "Giá", "Số lượng", "Tổng", "Xóa"}, 0);
-        Vector<Object> row = new Vector<>();
-        row.add(true);
-        row.add(productName);
-        row.add(price);
-        row.add(1);
-        row.add(price);
-        row.add(false);
-        tempModel.addRow(row);
+        if (qrData == null) {
+             JOptionPane.showMessageDialog(this, "Không thể tạo dữ liệu QR.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+             return;
+        }
 
-        ViewOrder orderView = new ViewOrder(currentCustomerID, selectedProducts, price, tempModel, this);
-        orderView.setVisible(true);
-        setVisible(false);
+
+        // 2. Hiển thị Dialog QR Code
+        // Tạo callback: hành động sẽ làm sau khi người dùng xác nhận đã thanh toán
+        Runnable onPaymentConfirmed = () -> {
+             // 3. (Sau khi xác nhận QR) Chuẩn bị dữ liệu để mở ViewOrder
+            List<String> selectedProducts = new ArrayList<>();
+            selectedProducts.add(productName);
+
+            DefaultTableModel tempModel = new DefaultTableModel(new String[]{"Chọn", "Tên sản phẩm", "Giá", "Số lượng", "Tổng", "Xóa"}, 0);
+            Vector<Object> row = new Vector<>();
+            row.add(true);
+            row.add(productName);
+            row.add(price);
+            row.add(1);
+            row.add(price);
+            row.add(false); // Nút xóa (có thể không cần thiết nếu chỉ mua 1 sp)
+            tempModel.addRow(row);
+
+            // 4. Mở ViewOrder để nhập thông tin người nhận
+            ViewOrder orderView = new ViewOrder(currentCustomerID, selectedProducts, price, tempModel, this); // Truyền `this` làm frame cha (nếu muốn ẩn ProductDetail)
+            orderView.setVisible(true);
+            // setVisible(false); // Ẩn cửa sổ ProductDetail sau khi mở ViewOrder
+            dispose(); // Hoặc đóng hẳn ProductDetail
+        };
+
+        // Hiển thị dialog
+        ViewPaymentQRDialog qrDialog = new ViewPaymentQRDialog(this, price, qrData, onPaymentConfirmed);
+        qrDialog.setVisible(true);
+
+        // Logic tiếp theo (mở ViewOrder) sẽ được thực hiện trong `onPaymentConfirmed` khi người dùng nhấn nút trên dialog.
     }
 }

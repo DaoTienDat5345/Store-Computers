@@ -115,11 +115,11 @@ public class Login extends JFrame {
             }
         });
 
-//        btnForgotPassword.addActionListener(e -> {
-//            ForgotPassword forgotFrame = new ForgotPassword();
-//            forgotFrame.setVisible(true);
-//            dispose();
-//        });
+        btnForgotPassword.addActionListener(e -> {
+            ForgotPassword forgotFrame = new ForgotPassword();
+            forgotFrame.setVisible(true);
+            dispose();
+        });
 
         LoginService loginService = new LoginService();
         new LoginController(this, loginService);
